@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+<script type="text/javascript">
+    aclib.runAutoTag({
+        zoneId: 'ahocfa0box',
+    });
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="QR Gen">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>QR Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #ffffff;
+    --surface: #f4f4f4;
+    --surface-hover: #ececec;
+    --ink: #1a1a1a;
+    --muted: #8a8a8a;
+    --border: #e6e6e6;
+  }
+  [data-theme="dark"]{
+    --bg: #121212;
+    --surface: #1e1e1e;
+    --surface-hover: #292929;
+    --ink: #f2f2f2;
+    --muted: #9a9a9a;
+    --border: #2c2c2c;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0;
+    min-height:100%;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    overscroll-behavior-y: contain;
+  }
+  body{
+    overscroll-behavior-y: none;
+  }
+  *{
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  input, select, textarea{
+    -webkit-touch-callout: default;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  .screen{
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+  }
+  .topbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 32px;
+    min-height: 48px;
+  }
+  .icon-btn{
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s ease, transform .1s ease;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover{ background: var(--surface-hover); }
+  .icon-btn:active{ transform: scale(0.96); }
+  .icon-btn svg{ width: 22px; height: 22px; stroke: var(--ink); }
+  .spacer{ width: 48px; }
+
+  h1.title{
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  p.subtitle{
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0 0 28px;
+  }
+
+  /* ---------- Type selection ---------- */
+  .content{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .type-btn{
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+    padding: 20px;
+    background: var(--surface);
+    border: none;
+    border-radius: 18px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .type-btn:hover{ background: var(--surface-hover); }
+  .type-btn:active{ transform: scale(0.98); }
+
+  .type-icon{
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .type-icon svg{
+    width: 24px;
+    height: 24px;
+    stroke: var(--ink);
+    fill: none;
+  }
+  .type-text{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .type-title{
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .type-sub{
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .chevron{
+    margin-left: auto;
+    width: 18px;
+    height: 18px;
+    stroke: var(--muted);
+    flex-shrink: 0;
+  }
+
+  /* ---------- Form ---------- */
+  .form-content{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .field{
+    margin-bottom: 18px;
+  }
+  .field label{
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .field input[type="text"],
+  .field input[type="tel"],
+  .field input[type="url"],
+  .field input[type="password"],
+  .field select{
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1.5px solid transparent;
+    border-radius: 12px;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s ease, background .15s ease;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field input:focus,
+  .field select:focus{
+    border-color: var(--ink);
+    background: #ffffff;
+  }
+  .toggle-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-radius: 12px;
+    margin-bottom: 18px;
+  }
+  .toggle-row span{
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .switch{
+    position: relative;
+    width: 44px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .switch input{
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider{
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #d7d7d7;
+    border-radius: 999px;
+    transition: background .15s ease;
+  }
+  .slider::before{
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .15s ease;
+  }
+  .switch input:checked + .slider{ background: var(--ink); }
+  .switch input:checked + .slider::before{ transform: translateX(18px); }
+
+  .password-wrap{ position: relative; }
+  .password-wrap input{ padding-right: 46px; }
+  .toggle-visibility{
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .toggle-visibility svg{ width: 18px; height: 18px; stroke: var(--muted); }
+
+  /* ---------- QR preview ---------- */
+  .qr-wrap{
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .qr-box{
+    width: 100%;
+    max-width: 260px;
+    aspect-ratio: 1 / 1;
+    background: #ffffff;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 20px;
+  }
+  .qr-box.empty{
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+  #qrcode{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-box img, .qr-box canvas{
+    border-radius: 8px;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .download-row{
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .secondary-btn{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    background: var(--surface);
+    color: var(--ink);
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .secondary-btn svg{ width: 17px; height: 17px; stroke: var(--ink); flex-shrink: 0; }
+  .secondary-btn:hover{ background: var(--surface-hover); }
+  .secondary-btn:active{ transform: scale(0.98); }
+
+  .hidden{ display: none !important; }
+
+  .install-banner{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    background: var(--ink);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: opacity .15s ease, transform .1s ease;
+  }
+  .install-banner svg{ width: 16px; height: 16px; stroke: #ffffff; }
+  .install-banner:active{ transform: scale(0.98); }
+
+  /* ---------- Settings ---------- */
+  .settings-section{
+    margin-bottom: 28px;
+  }
+  .settings-label{
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted);
+    margin: 0 0 10px 4px;
+  }
+  .settings-group{
+    background: var(--surface);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .option-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    text-align: left;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .settings-group .option-row:last-child{ border-bottom: none; }
+  .option-row:active{ background: var(--surface-hover); }
+  .radio-dot{
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .radio-dot::after{
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ink);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  .option-row.active .radio-dot{ border-color: var(--ink); }
+  .option-row.active .radio-dot::after{ opacity: 1; transform: scale(1); }
+
+  .link-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    text-align: left;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .settings-group .link-row:last-child{ border-bottom: none; }
+  .link-row:active{ background: var(--surface-hover); }
+  .link-row svg{ width: 18px; height: 18px; stroke: var(--muted); flex-shrink: 0; }
+
+  .legal-text{
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink);
+  }
+  .legal-text p{ margin: 0 0 16px; }
+  .legal-text h2{ font-size: 15px; margin: 24px 0 8px; }
+  .legal-text h2:first-child{ margin-top: 0; }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <!-- ===== TOP BAR ===== -->
+  <div class="topbar">
+    <button class="icon-btn hidden" id="backBtn" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"></path>
+        <path d="M12 19l-7-7 7-7"></path>
+      </svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+    <span class="spacer" id="rightSpacer"></span>
+  </div>
+
+  <!-- ===== SCREEN: SETTINGS ===== -->
+  <div id="screenSettings" class="hidden form-content">
+    <h1 class="title" data-i18n="settingsTitle">Settings</h1>
+    <p class="subtitle" data-i18n="settingsSubtitle">Language, appearance and legal info</p>
+
+    <div class="settings-section">
+      <p class="settings-label" data-i18n="languageLabel">Language</p>
+      <div class="settings-group">
+        <button class="option-row" data-lang="pt">
+          <span>Português</span>
+          <span class="radio-dot"></span>
+        </button>
+        <button class="option-row" data-lang="en">
+          <span>English</span>
+          <span class="radio-dot"></span>
+        </button>
+        <button class="option-row" data-lang="fr">
+          <span>Français</span>
+          <span class="radio-dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label" data-i18n="appearanceLabel">Appearance</p>
+      <div class="settings-group">
+        <div class="toggle-row" style="margin-bottom:0;">
+          <span data-i18n="darkModeLabel">Dark mode</span>
+          <label class="switch">
+            <input type="checkbox" id="darkModeToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label" data-i18n="legalLabel">Legal</p>
+      <div class="settings-group">
+        <button class="link-row" id="privacyBtn">
+          <span data-i18n="privacyPolicy">Privacy Policy</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+        </button>
+        <button class="link-row" id="termsBtn">
+          <span data-i18n="termsOfService">Terms of Service</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: PRIVACY POLICY ===== -->
+  <div id="screenPrivacy" class="hidden form-content">
+    <h1 class="title" data-i18n="privacyPolicy">Privacy Policy</h1>
+    <p class="subtitle" id="privacyUpdated" data-i18n="lastUpdated">Last updated: August 2026</p>
+    <div class="legal-text" data-i18n="privacyBody">
+      <p>This app generates QR codes directly on your device. The Wi-Fi, phone and website information you enter is used only to build the QR code image and is never sent to or stored on any server.</p>
+      <p>No personal data, analytics or usage tracking is collected by this app. Your language and appearance preferences are saved locally on your device so they persist the next time you open the app.</p>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: TERMS OF SERVICE ===== -->
+  <div id="screenTerms" class="hidden form-content">
+    <h1 class="title" data-i18n="termsOfService">Terms of Service</h1>
+    <p class="subtitle" id="termsUpdated" data-i18n="lastUpdated">Last updated: August 2026</p>
+    <div class="legal-text" data-i18n="termsBody">
+      <p>This app is provided as-is, without warranties of any kind. You are responsible for the accuracy of the information you enter and for how you share the QR codes you generate.</p>
+      <p>Use of this app is free of charge. Continued use of the app implies acceptance of these terms, which may be updated from time to time.</p>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 1: TYPE SELECTION ===== -->
+  <div id="screenSelect">
+    <h1 class="title" data-i18n="selectTitle">Create a QR code</h1>
+    <p class="subtitle" data-i18n="selectSubtitle">Choose what you'd like to share</p>
+
+    <button class="install-banner hidden" id="installBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+      <span data-i18n="installApp">Install app</span>
+    </button>
+
+    <div class="content">
+      <button class="type-btn" data-type="wifi">
+        <span class="type-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </span>
+        <span class="type-text">
+          <span class="type-title">Wi-Fi</span>
+          <span class="type-sub" data-i18n="wifiTypeSub">Share network access</span>
+        </span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+      </button>
+
+      <button class="type-btn" data-type="phone">
+        <span class="type-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+        </span>
+        <span class="type-text">
+          <span class="type-title" data-i18n="phoneTypeTitle">Phone</span>
+          <span class="type-sub" data-i18n="phoneTypeSub">Dial a number instantly</span>
+        </span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+      </button>
+
+      <button class="type-btn" data-type="website">
+        <span class="type-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </span>
+        <span class="type-text">
+          <span class="type-title" data-i18n="websiteTypeTitle">Website</span>
+          <span class="type-sub" data-i18n="websiteTypeSub">Link to any page</span>
+        </span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: WIFI FORM ===== -->
+  <div id="screenWifi" class="hidden form-content">
+    <h1 class="title" data-i18n="wifiTitle">Wi-Fi network</h1>
+    <p class="subtitle" data-i18n="wifiSubtitle">Fill in the network details</p>
+
+    <div class="field">
+      <label for="wifiSsid" data-i18n="wifiSsidLabel">Network name (SSID)</label>
+      <input type="text" id="wifiSsid" placeholder="e.g. Home Network" data-i18n-placeholder="wifiSsidPlaceholder" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="wifiSecurity" data-i18n="wifiSecurityLabel">Security type</label>
+      <select id="wifiSecurity">
+        <option value="WPA" data-i18n="wifiSecurityWpa">WPA / WPA2</option>
+        <option value="WEP" data-i18n="wifiSecurityWep">WEP</option>
+        <option value="nopass" data-i18n="wifiSecurityOpen">None (open network)</option>
+      </select>
+    </div>
+
+    <div class="field" id="wifiPasswordField">
+      <label for="wifiPassword" data-i18n="wifiPasswordLabel">Password</label>
+      <div class="password-wrap">
+        <input type="password" id="wifiPassword" placeholder="Network password" data-i18n-placeholder="wifiPasswordPlaceholder" autocomplete="off">
+        <button type="button" class="toggle-visibility" id="toggleWifiPass" aria-label="Show password">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <span data-i18n="wifiHiddenLabel">Hidden network</span>
+      <label class="switch">
+        <input type="checkbox" id="wifiHidden">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="qr-wrap">
+      <div class="qr-box empty" id="wifiQrBox" data-placeholder="Fill in the network name to generate your QR code">
+        <span data-i18n="wifiQrEmpty">Fill in the network name to generate your QR code</span>
+      </div>
+    </div>
+
+    <div class="download-row hidden" id="wifiDownloadRow">
+      <button class="secondary-btn" id="wifiDownloadPng">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        PNG
+      </button>
+      <button class="secondary-btn" id="wifiDownloadPdf">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 3: PHONE FORM ===== -->
+  <div id="screenPhone" class="hidden form-content">
+    <h1 class="title" data-i18n="phoneTitle">Phone number</h1>
+    <p class="subtitle" data-i18n="phoneSubtitle">Enter the number to call</p>
+
+    <div class="field">
+      <label for="phoneNumber" data-i18n="phoneNumberLabel">Phone number</label>
+      <input type="tel" id="phoneNumber" placeholder="e.g. +351 912 345 678" data-i18n-placeholder="phoneNumberPlaceholder" autocomplete="off">
+    </div>
+
+    <div class="qr-wrap">
+      <div class="qr-box empty" id="phoneQrBox" data-placeholder="Enter a phone number to generate your QR code">
+        <span data-i18n="phoneQrEmpty">Enter a phone number to generate your QR code</span>
+      </div>
+    </div>
+
+    <div class="download-row hidden" id="phoneDownloadRow">
+      <button class="secondary-btn" id="phoneDownloadPng">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        PNG
+      </button>
+      <button class="secondary-btn" id="phoneDownloadPdf">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 4: WEBSITE FORM ===== -->
+  <div id="screenWebsite" class="hidden form-content">
+    <h1 class="title" data-i18n="websiteTitle">Website</h1>
+    <p class="subtitle" data-i18n="websiteSubtitle">Enter the link to share</p>
+
+    <div class="field">
+      <label for="websiteUrl" data-i18n="websiteUrlLabel">Website URL</label>
+      <input type="text" id="websiteUrl" placeholder="e.g. www.example.com" data-i18n-placeholder="websiteUrlPlaceholder" autocomplete="off">
+    </div>
+
+    <div class="qr-wrap">
+      <div class="qr-box empty" id="websiteQrBox" data-placeholder="Enter a URL to generate your QR code">
+        <span data-i18n="websiteQrEmpty">Enter a URL to generate your QR code</span>
+      </div>
+    </div>
+
+    <div class="download-row hidden" id="websiteDownloadRow">
+      <button class="secondary-btn" id="websiteDownloadPng">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        PNG
+      </button>
+      <button class="secondary-btn" id="websiteDownloadPdf">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        PDF
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const screens = {
+    select: document.getElementById('screenSelect'),
+    wifi: document.getElementById('screenWifi'),
+    phone: document.getElementById('screenPhone'),
+    website: document.getElementById('screenWebsite'),
+    settings: document.getElementById('screenSettings'),
+    privacy: document.getElementById('screenPrivacy'),
+    terms: document.getElementById('screenTerms'),
+  };
+  const backBtn = document.getElementById('backBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+
+  // screens reached from Settings should return to Settings, not the home screen
+  const backTarget = { settings: 'select', privacy: 'settings', terms: 'settings' };
+  let currentScreen = 'select';
+
+  function showScreen(name){
+    currentScreen = name;
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[name].classList.remove('hidden');
+    if(name === 'select'){
+      backBtn.classList.add('hidden');
+      settingsBtn.classList.remove('hidden');
+    } else {
+      backBtn.classList.remove('hidden');
+      settingsBtn.classList.add('hidden');
+    }
+  }
+
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => showScreen(btn.dataset.type));
+  });
+  settingsBtn.addEventListener('click', () => showScreen('settings'));
+  backBtn.addEventListener('click', () => showScreen(backTarget[currentScreen] || 'select'));
+  document.getElementById('privacyBtn').addEventListener('click', () => showScreen('privacy'));
+  document.getElementById('termsBtn').addEventListener('click', () => showScreen('terms'));
+
+  // generic QR renderer using qrcodejs, with an empty-state fallback
+  function renderQr(containerId, text, rowId, pngBtnId, pdfBtnId){
+    const box = document.getElementById(containerId);
+    const row = document.getElementById(rowId);
+    box.innerHTML = '';
+    if(!text){
+      box.classList.add('empty');
+      const msg = document.createElement('span');
+      msg.textContent = box.dataset.placeholder || 'Fill in the details to generate your QR code';
+      box.appendChild(msg);
+      row.classList.add('hidden');
+      return;
+    }
+    box.classList.remove('empty');
+    const holder = document.createElement('div');
+    holder.id = containerId + 'Canvas';
+    box.appendChild(holder);
+    new QRCode(holder, {
+      text: text,
+      width: 220,
+      height: 220,
+      colorDark: '#1a1a1a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    row.classList.remove('hidden');
+    document.getElementById(pngBtnId).onclick = () => downloadPng(holder);
+    document.getElementById(pdfBtnId).onclick = () => downloadPdf(holder);
+  }
+
+  function getQrDataUrl(holder){
+    const img = holder.querySelector('img');
+    const canvas = holder.querySelector('canvas');
+    return img ? img.src : (canvas ? canvas.toDataURL('image/png') : null);
+  }
+
+  function downloadPng(holder){
+    setTimeout(() => {
+      const src = getQrDataUrl(holder);
+      if(!src) return;
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = 'qrcode.png';
+      a.click();
+    }, 50);
+  }
+
+  function downloadPdf(holder){
+    setTimeout(() => {
+      const src = getQrDataUrl(holder);
+      if(!src) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const size = 100;
+      const x = (pageWidth - size) / 2;
+      doc.addImage(src, 'PNG', x, 40, size, size);
+      doc.save('qrcode.pdf');
+    }, 50);
+  }
+
+  function escapeWifiValue(v){
+    return v.replace(/([\\;,:"])/g, '\\$1');
+  }
+
+  // ----- Wi-Fi -----
+  const wifiSsid = document.getElementById('wifiSsid');
+  const wifiSecurity = document.getElementById('wifiSecurity');
+  const wifiPassword = document.getElementById('wifiPassword');
+  const wifiHidden = document.getElementById('wifiHidden');
+  const wifiPasswordField = document.getElementById('wifiPasswordField');
+  const toggleWifiPass = document.getElementById('toggleWifiPass');
+
+  function updateWifiQr(){
+    const ssid = wifiSsid.value.trim();
+    const sec = wifiSecurity.value;
+    const pass = wifiPassword.value;
+    const hidden = wifiHidden.checked ? 'true' : 'false';
+    wifiPasswordField.classList.toggle('hidden', sec === 'nopass');
+    if(!ssid){
+      renderQr('wifiQrBox', '', 'wifiDownloadRow', 'wifiDownloadPng', 'wifiDownloadPdf');
+      return;
+    }
+    const payload = `WIFI:T:${sec};S:${escapeWifiValue(ssid)};${sec === 'nopass' ? '' : 'P:' + escapeWifiValue(pass) + ';'}H:${hidden};;`;
+    renderQr('wifiQrBox', payload, 'wifiDownloadRow', 'wifiDownloadPng', 'wifiDownloadPdf');
+  }
+  [wifiSsid, wifiSecurity, wifiPassword, wifiHidden].forEach(el => el.addEventListener('input', updateWifiQr));
+  toggleWifiPass.addEventListener('click', () => {
+    wifiPassword.type = wifiPassword.type === 'password' ? 'text' : 'password';
+  });
+
+  // ----- Phone -----
+  const phoneNumber = document.getElementById('phoneNumber');
+  function updatePhoneQr(){
+    const num = phoneNumber.value.trim();
+    renderQr('phoneQrBox', num ? `tel:${num.replace(/[^\d+]/g, '')}` : '', 'phoneDownloadRow', 'phoneDownloadPng', 'phoneDownloadPdf');
+  }
+  phoneNumber.addEventListener('input', updatePhoneQr);
+
+  // ----- Website -----
+  const websiteUrl = document.getElementById('websiteUrl');
+  function updateWebsiteQr(){
+    let url = websiteUrl.value.trim();
+    if(url && !/^https?:\/\//i.test(url)){
+      url = 'https://' + url;
+    }
+    renderQr('websiteQrBox', url, 'websiteDownloadRow', 'websiteDownloadPng', 'websiteDownloadPdf');
+  }
+  websiteUrl.addEventListener('input', updateWebsiteQr);
+
+  // ----- Disable pull-to-refresh -----
+  let touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    const scrollEl = document.scrollingElement || document.documentElement;
+    const pullingDown = e.touches[0].clientY > touchStartY;
+    if (scrollEl.scrollTop <= 0 && pullingDown) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // ----- Disable long-press text selection menu (copy/translate/share) -----
+  // Inputs stay excluded so the user can still select, copy and paste inside fields.
+  document.addEventListener('contextmenu', (e) => {
+    if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+      e.preventDefault();
+    }
+  });
+  document.addEventListener('selectstart', (e) => {
+    if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+      e.preventDefault();
+    }
+  });
+
+  showScreen('select');
+
+  // ----- PWA: service worker + install prompt (Android) -----
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+    });
+  }
+
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.classList.remove('hidden');
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.classList.add('hidden');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installBtn.classList.add('hidden');
+  });
+
+  // ----- Language (PT / EN / FR) -----
+  const translations = {
+    en: {
+      selectTitle: "Create a QR code",
+      selectSubtitle: "Choose what you'd like to share",
+      installApp: "Install app",
+      wifiTypeSub: "Share network access",
+      phoneTypeTitle: "Phone",
+      phoneTypeSub: "Dial a number instantly",
+      websiteTypeTitle: "Website",
+      websiteTypeSub: "Link to any page",
+      wifiTitle: "Wi-Fi network",
+      wifiSubtitle: "Fill in the network details",
+      wifiSsidLabel: "Network name (SSID)",
+      wifiSsidPlaceholder: "e.g. Home Network",
+      wifiSecurityLabel: "Security type",
+      wifiSecurityWpa: "WPA / WPA2",
+      wifiSecurityWep: "WEP",
+      wifiSecurityOpen: "None (open network)",
+      wifiPasswordLabel: "Password",
+      wifiPasswordPlaceholder: "Network password",
+      wifiHiddenLabel: "Hidden network",
+      wifiQrEmpty: "Fill in the network name to generate your QR code",
+      phoneTitle: "Phone number",
+      phoneSubtitle: "Enter the number to call",
+      phoneNumberLabel: "Phone number",
+      phoneNumberPlaceholder: "e.g. +351 912 345 678",
+      phoneQrEmpty: "Enter a phone number to generate your QR code",
+      websiteTitle: "Website",
+      websiteSubtitle: "Enter the link to share",
+      websiteUrlLabel: "Website URL",
+      websiteUrlPlaceholder: "e.g. www.example.com",
+      websiteQrEmpty: "Enter a URL to generate your QR code",
+      settingsTitle: "Settings",
+      settingsSubtitle: "Language, appearance and legal info",
+      languageLabel: "Language",
+      appearanceLabel: "Appearance",
+      darkModeLabel: "Dark mode",
+      legalLabel: "Legal",
+      privacyPolicy: "Privacy Policy",
+      termsOfService: "Terms of Service",
+      lastUpdated: "Last updated: August 2026",
+      privacyBody: "<p>This app generates QR codes directly on your device. The Wi-Fi, phone and website information you enter is used only to build the QR code image and is never sent to or stored on any server.</p><p>No personal data, analytics or usage tracking is collected by this app. Your language and appearance preferences are saved locally on your device so they persist the next time you open the app.</p>",
+      termsBody: "<p>This app is provided as-is, without warranties of any kind. You are responsible for the accuracy of the information you enter and for how you share the QR codes you generate.</p><p>Use of this app is free of charge. Continued use of the app implies acceptance of these terms, which may be updated from time to time.</p>"
+    },
+    pt: {
+      selectTitle: "Criar um código QR",
+      selectSubtitle: "Escolhe o que queres partilhar",
+      installApp: "Instalar app",
+      wifiTypeSub: "Partilhar acesso à rede",
+      phoneTypeTitle: "Telefone",
+      phoneTypeSub: "Ligar a um número instantaneamente",
+      websiteTypeTitle: "Website",
+      websiteTypeSub: "Ligar a qualquer página",
+      wifiTitle: "Rede Wi-Fi",
+      wifiSubtitle: "Preenche os dados da rede",
+      wifiSsidLabel: "Nome da rede (SSID)",
+      wifiSsidPlaceholder: "ex. Rede de Casa",
+      wifiSecurityLabel: "Tipo de segurança",
+      wifiSecurityWpa: "WPA / WPA2",
+      wifiSecurityWep: "WEP",
+      wifiSecurityOpen: "Nenhuma (rede aberta)",
+      wifiPasswordLabel: "Palavra-passe",
+      wifiPasswordPlaceholder: "Palavra-passe da rede",
+      wifiHiddenLabel: "Rede oculta",
+      wifiQrEmpty: "Preenche o nome da rede para gerar o teu código QR",
+      phoneTitle: "Número de telefone",
+      phoneSubtitle: "Introduz o número a ligar",
+      phoneNumberLabel: "Número de telefone",
+      phoneNumberPlaceholder: "ex. +351 912 345 678",
+      phoneQrEmpty: "Introduz um número de telefone para gerar o teu código QR",
+      websiteTitle: "Website",
+      websiteSubtitle: "Introduz o link a partilhar",
+      websiteUrlLabel: "URL do website",
+      websiteUrlPlaceholder: "ex. www.exemplo.com",
+      websiteQrEmpty: "Introduz um URL para gerar o teu código QR",
+      settingsTitle: "Definições",
+      settingsSubtitle: "Idioma, aparência e informação legal",
+      languageLabel: "Idioma",
+      appearanceLabel: "Aparência",
+      darkModeLabel: "Modo noturno",
+      legalLabel: "Legal",
+      privacyPolicy: "Política de Privacidade",
+      termsOfService: "Termos de Utilização",
+      lastUpdated: "Última atualização: agosto de 2026",
+      privacyBody: "<p>Esta app gera códigos QR diretamente no teu dispositivo. A informação de Wi-Fi, telefone e website que introduzes é usada apenas para criar a imagem do código QR e nunca é enviada ou guardada em nenhum servidor.</p><p>Esta app não recolhe dados pessoais, análises ou dados de utilização. As tuas preferências de idioma e aparência são guardadas localmente no dispositivo para se manterem na próxima vez que abrires a app.</p>",
+      termsBody: "<p>Esta app é fornecida tal como está, sem garantias de qualquer tipo. És responsável pela exatidão da informação que introduzes e pela forma como partilhas os códigos QR que geras.</p><p>A utilização desta app é gratuita. A utilização continuada da app implica a aceitação destes termos, que podem ser atualizados periodicamente.</p>"
+    },
+    fr: {
+      selectTitle: "Créer un code QR",
+      selectSubtitle: "Choisissez ce que vous souhaitez partager",
+      installApp: "Installer l'app",
+      wifiTypeSub: "Partager l'accès au réseau",
+      phoneTypeTitle: "Téléphone",
+      phoneTypeSub: "Appeler un numéro instantanément",
+      websiteTypeTitle: "Site web",
+      websiteTypeSub: "Lien vers une page",
+      wifiTitle: "Réseau Wi-Fi",
+      wifiSubtitle: "Renseignez les détails du réseau",
+      wifiSsidLabel: "Nom du réseau (SSID)",
+      wifiSsidPlaceholder: "ex. Réseau Maison",
+      wifiSecurityLabel: "Type de sécurité",
+      wifiSecurityWpa: "WPA / WPA2",
+      wifiSecurityWep: "WEP",
+      wifiSecurityOpen: "Aucune (réseau ouvert)",
+      wifiPasswordLabel: "Mot de passe",
+      wifiPasswordPlaceholder: "Mot de passe du réseau",
+      wifiHiddenLabel: "Réseau masqué",
+      wifiQrEmpty: "Renseignez le nom du réseau pour générer votre code QR",
+      phoneTitle: "Numéro de téléphone",
+      phoneSubtitle: "Entrez le numéro à appeler",
+      phoneNumberLabel: "Numéro de téléphone",
+      phoneNumberPlaceholder: "ex. +351 912 345 678",
+      phoneQrEmpty: "Entrez un numéro de téléphone pour générer votre code QR",
+      websiteTitle: "Site web",
+      websiteSubtitle: "Entrez le lien à partager",
+      websiteUrlLabel: "URL du site web",
+      websiteUrlPlaceholder: "ex. www.exemple.com",
+      websiteQrEmpty: "Entrez une URL pour générer votre code QR",
+      settingsTitle: "Paramètres",
+      settingsSubtitle: "Langue, apparence et informations légales",
+      languageLabel: "Langue",
+      appearanceLabel: "Apparence",
+      darkModeLabel: "Mode sombre",
+      legalLabel: "Légal",
+      privacyPolicy: "Politique de confidentialité",
+      termsOfService: "Conditions d'utilisation",
+      lastUpdated: "Dernière mise à jour : août 2026",
+      privacyBody: "<p>Cette application génère des codes QR directement sur votre appareil. Les informations Wi-Fi, téléphone et site web que vous saisissez ne servent qu'à créer l'image du code QR et ne sont jamais envoyées ni stockées sur un serveur.</p><p>Aucune donnée personnelle, analyse ou suivi d'utilisation n'est collecté par cette application. Vos préférences de langue et d'apparence sont enregistrées localement sur votre appareil afin de persister à la prochaine ouverture de l'application.</p>",
+      termsBody: "<p>Cette application est fournie telle quelle, sans garantie d'aucune sorte. Vous êtes responsable de l'exactitude des informations saisies et de la manière dont vous partagez les codes QR générés.</p><p>L'utilisation de cette application est gratuite. Son utilisation continue implique l'acceptation de ces conditions, qui peuvent être mises à jour périodiquement.</p>"
+    }
+  };
+
+  const qrEmptyIds = {
+    wifiQrBox: 'wifiQrEmpty',
+    phoneQrBox: 'phoneQrEmpty',
+    websiteQrBox: 'websiteQrEmpty'
+  };
+
+  let currentLang = localStorage.getItem('qr-app-lang') || 'en';
+  if(!translations[currentLang]) currentLang = 'en';
+
+  function applyLanguage(lang){
+    if(!translations[lang]) lang = 'en';
+    currentLang = lang;
+    localStorage.setItem('qr-app-lang', lang);
+    document.documentElement.lang = lang;
+    const dict = translations[lang];
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if(!dict[key]) return;
+      if(key === 'privacyBody' || key === 'termsBody'){
+        el.innerHTML = dict[key];
+      } else {
+        el.textContent = dict[key];
+      }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.dataset.i18nPlaceholder;
+      if(dict[key]) el.placeholder = dict[key];
+    });
+    // keep the empty-state placeholder data in sync so a cleared field shows the right language
+    Object.entries(qrEmptyIds).forEach(([boxId, key]) => {
+      const box = document.getElementById(boxId);
+      if(box && dict[key]) box.dataset.placeholder = dict[key];
+    });
+
+    document.querySelectorAll('#screenSettings .option-row').forEach(row => {
+      row.classList.toggle('active', row.dataset.lang === lang);
+    });
+  }
+
+  document.querySelectorAll('#screenSettings .option-row[data-lang]').forEach(row => {
+    row.addEventListener('click', () => applyLanguage(row.dataset.lang));
+  });
+
+  applyLanguage(currentLang);
+
+  // ----- Dark mode -----
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const savedTheme = localStorage.getItem('qr-app-theme');
+  const initialDark = savedTheme === 'dark';
+
+  function applyTheme(isDark){
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#121212' : '#ffffff');
+    darkModeToggle.checked = isDark;
+    localStorage.setItem('qr-app-theme', isDark ? 'dark' : 'light');
+  }
+
+  darkModeToggle.addEventListener('change', () => applyTheme(darkModeToggle.checked));
+  applyTheme(initialDark);
+
+</script>
+
+</body>
+</html>
